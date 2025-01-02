@@ -7,12 +7,16 @@ import Landing from './components/Landing/Landing_Panel/page';
 
 import Home from './components/Home/Main_Home/page';
 import AccountPage from './components/Home/Main_Account/page';
+import ShoppingCart from './components/Home/Main_Cart/page';
+import PurchaseSuccess from './components/Home/Main_Cart/cart_success';
 
 import Landing_Info from './components/Landing/Landing_Info/page';
 import Landing_Team from './components/Landing/Landing_Team/page';
 import Landing_Contact from './components/Landing/Landing_Contact/page';
 
 import AdminInventoryPage from './components/Admin/Admin_Inventory/page';
+import AdminOverviewPage from './components/Admin/Admin_Overview/page';
+import CustomerAccountManagement from './components/Admin/Admin_Members/page';
 
 const App = () => {
   return (
@@ -24,10 +28,15 @@ const App = () => {
         <Route path="/info" element={<Landing_Info />} />
         <Route path="/team" element={<Landing_Team />} />
         <Route path="/contact" element={<Landing_Contact />} />
+
         <Route path="/home" element={<Home />} />
         <Route path="/account" element={<AccountPage />} />
+        <Route path="/cart" element={<ShoppingCart />} />
+        <Route path="/success" element={<PurchaseSuccess />} />
 
         <Route path="/admin_inventory" element={<AdminInventoryPage />} />
+        <Route path="/admin_overview" element={<AdminOverviewPage />} />
+        <Route path="/admin_memberlist" element={<CustomerAccountManagement />} />
       </Routes>
     </Router>
   );

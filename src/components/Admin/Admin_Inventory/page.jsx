@@ -5,7 +5,6 @@ const AdminInventoryPage = () => {
   const [products, setProducts] = useState([]);
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
   const [isRemoveProductModalOpen, setIsRemoveProductModalOpen] = useState(false);
-  const [isEditProductModalOpen, setIsEditProductModalOpen] = useState(false);
   const [newProduct, setNewProduct] = useState({
     name: "",
     price: "",
@@ -13,8 +12,6 @@ const AdminInventoryPage = () => {
     description: "",
     category: "DAIRY",
   });
-  const [editProductId, setEditProductId] = useState(null);
-  const [editProductDetails, setEditProductDetails] = useState({});
   const [removeProductId, setRemoveProductId] = useState("");
 
   const handleInputChange = (e) => {
@@ -66,38 +63,6 @@ const AdminInventoryPage = () => {
     setIsRemoveProductModalOpen(false);
   };
 
-  const handleEditProductSearch = (e) => {
-    e.preventDefault();
-    const product = products.find((product) => product.id === Number(editProductId));
-    if (!product) {
-      alert("Product not found.");
-      setIsEditProductModalOpen(false);
-    } else {
-      setEditProductDetails(product);
-    }
-  };
-
-  const handleEditInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditProductDetails((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSaveEditProduct = (e) => {
-    e.preventDefault();
-    setProducts((prev) =>
-      prev.map((product) =>
-        product.id === editProductDetails.id ? editProductDetails : product
-      )
-    );
-    setEditProductId(null);
-    setEditProductDetails({});
-    setIsEditProductModalOpen(false);
-    alert("Product updated successfully.");
-  };
-
   return (
     <>
       <AdminHeader></AdminHeader>
@@ -126,12 +91,6 @@ const AdminInventoryPage = () => {
             onClick={() => setIsRemoveProductModalOpen(true)}
           >
             Remove Product (by ID)
-          </button>
-          <button
-            className="px-6 py-2 bg-yellow-600 text-white font-semibold rounded-lg hover:bg-yellow-700"
-            onClick={() => setIsEditProductModalOpen(true)}
-          >
-            Edit Product Info
           </button>
         </div>
 
@@ -295,118 +254,6 @@ const AdminInventoryPage = () => {
                   </button>
                 </div>
               </form>
-            </div>
-          </div>
-        )}
-
-        {/* Edit Product Modal */}
-        {isEditProductModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white w-full max-w-md rounded-lg p-6 shadow-lg">
-              <h2 className="text-xl font-bold mb-4">Edit Product</h2>
-              {!editProductDetails.id ? (
-                <form onSubmit={handleEditProductSearch} className="space-y-4">
-                  <input
-                    type="number"
-                    placeholder="Enter Product ID"
-                    value={editProductId || ""}
-                    onChange={(e) => setEditProductId(e.target.value)}
-                    className="w-full border rounded-lg p-2"
-                    required
-                  />
-                  <div className="flex justify-end space-x-4">
-                    <button
-                      type="button"
-                      className="bg-gray-500 text-white px-4 py-2 rounded-lg"
-                      onClick={() => setIsEditProductModalOpen(false)}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="bg-yellow-600 text-white px-4 py-2 rounded-lg"
-                    >
-                      Search
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <form onSubmit={handleSaveEditProduct} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium">Product Name</label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={editProductDetails.name}
-                      onChange={handleEditInputChange}
-                      className="w-full border rounded-lg p-2"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium">Price (₱)</label>
-                    <input
-                      type="number"
-                      name="price"
-                      value={editProductDetails.price}
-                      onChange={handleEditInputChange}
-                      className="w-full border rounded-lg p-2"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium">Quantity</label>
-                    <input
-                      type="number"
-                      name="quantity"
-                      value={editProductDetails.quantity}
-                      onChange={handleEditInputChange}
-                      className="w-full border rounded-lg p-2"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium">Category</label>
-                    <select
-                      name="category"
-                      value={editProductDetails.category}
-                      onChange={handleEditInputChange}
-                      className="w-full border rounded-lg p-2"
-                      required
-                    >
-                      <option value="DAIRY">DAIRY</option>
-                      <option value="BEVERAGE">BEVERAGE</option>
-                      <option value="PRODUCE">PRODUCE</option>
-                      <option value="MEAT">MEAT</option>
-                      <option value="MISC.">MISC.</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium">Description</label>
-                    <textarea
-                      name="description"
-                      value={editProductDetails.description}
-                      onChange={handleEditInputChange}
-                      className="w-full border rounded-lg p-2"
-                    />
-                  </div>
-                  <div className="flex justify-end space-x-4">
-                    <button
-                      type="button"
-                      className="bg-gray-500 text-white px-4 py-2 rounded-lg"
-                      onClick={() => setIsEditProductModalOpen(false)}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="bg-green-700 text-white px-4 py-2 rounded-lg"
-                    >
-                      Save Changes
-                    </button>
-                  </div>
-                </form>
-              )}
             </div>
           </div>
         )}
