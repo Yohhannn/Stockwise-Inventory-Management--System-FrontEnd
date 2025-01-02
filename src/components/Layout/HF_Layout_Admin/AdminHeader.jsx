@@ -19,13 +19,13 @@ const AdminHeader = () => {
             INVENTORY
           </a>
           <a 
-            href="/cart" 
+            href="/admin_overview" 
             className="hover:bg-green-700 px-4 py-2 rounded transition duration-300 transform hover:scale-105"
           >
             OVERVIEW
           </a>
           <a 
-            href="/account" 
+            href="/admin_memberlist" 
             className="hover:bg-green-700 px-4 py-2 rounded transition duration-300 transform hover:scale-105"
           >
             MEMBERS
