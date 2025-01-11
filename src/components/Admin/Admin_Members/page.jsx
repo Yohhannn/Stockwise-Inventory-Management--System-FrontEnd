@@ -1,47 +1,97 @@
 'use client';
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import AdminHeader from "../../Layout/HF_Layout_Admin/AdminHeader";
 
 const CustomerAccountManagement = () => {
-  const [members, setMembers] = useState(
-    Array(1).fill({
-      id: "",
-      username: "johnpaul123",
-      firstName: "John",
-      lastName: "Paul",
-      email: "johnpaul@example.com",
-      phone: "+63 912 345 6789",
-      address: "123 Example St, Example City",
-      joinedDate: "January 15, 2024",
-    }).map((member, index) => ({ ...member, id: index + 1 }))
-  );
+  const [members, setMembers] = useState([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState("");
+  const [newMember, setNewMember] = useState({
+    username: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    status: '',
+    password: '',  // Added password field
+  });
+  const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('');
 
-  const handleCreateAccount = (e) => {
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get("http://localhost:8080/api/accounts/users");
+        setMembers(response.data); // Ensure the data contains `id` and `status` fields
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+  const handleCreateAccount = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const newMember = {
-      id: members.length > 0 ? members[members.length - 1].id + 1 : 1,
+    const newMemberData = {
       username: formData.get("username"),
-      firstName: formData.get("firstName"),
-      lastName: formData.get("lastName"),
+      first_name: formData.get("firstName"),
+      last_name: formData.get("lastName"),
       email: formData.get("email"),
-      phone: formData.get("phone"),
-      address: formData.get("address"),
+      status: formData.get("status"),
+      password: formData.get("password"), 
+      
+      // Capture password from form
       joinedDate: new Date().toLocaleDateString(),
+      
     };
-    setMembers([...members, newMember]);
-    setIsCreateModalOpen(false);
+
+    try {
+      const response = await axios.get("http://localhost:8080/register/check-username", {
+        params: { username: newMemberData.username }
+      });
+
+      if (response.data.usernameExists) {
+        setMessage("Username is already taken.");
+        setMessageType("error");
+        return;
+      }
+
+      const registrationResponse = await axios.post("http://localhost:8080/register/add", newMemberData);
+
+      // Add the new member to the state to update the table
+      setMembers([...members, { ...newMemberData, id: members.length + 1, createdAt: new Date().toLocaleDateString() }]);
+      setMessage("Account created successfully!");
+      setMessageType("success");
+
+      // Close the modal
+      setIsCreateModalOpen(false);
+    } catch (error) {
+      console.error("Error creating account:", error);
+      setMessage("Error creating account.");
+      setMessageType("error");
+    }
   };
 
-  const handleDeleteAccount = (e) => {
+  const handleDeleteAccount = async (e) => {
     e.preventDefault();
-    setMembers(members.filter((member) => member.id !== parseInt(deleteId)));
-    setDeleteId("");
-    setIsDeleteModalOpen(false);
+
+    try {
+      // Send DELETE request to the backend to delete the user
+      await axios.delete(`http://localhost:8080/api/accounts/${deleteId}`);
+
+      // Remove the deleted user from the frontend state
+      setMembers(members.filter((member) => member.id !== parseInt(deleteId)));
+
+      // Reset the deleteId and close the modal
+      setDeleteId("");
+      setIsDeleteModalOpen(false);
+    } catch (error) {
+      console.error("Error deleting user:", error);
+    }
   };
 
   return (
@@ -91,8 +141,7 @@ const CustomerAccountManagement = () => {
                     <th className="border border-gray-300 px-4 py-2 text-left">First Name</th>
                     <th className="border border-gray-300 px-4 py-2 text-left">Last Name</th>
                     <th className="border border-gray-300 px-4 py-2 text-left">Email</th>
-                    <th className="border border-gray-300 px-4 py-2 text-left">Contact</th>
-                    <th className="border border-gray-300 px-4 py-2 text-left">Address</th>
+                    <th className="border border-gray-300 px-4 py-2 text-left">Status</th>
                     <th className="border border-gray-300 px-4 py-2 text-left">Date Joined</th>
                   </tr>
                 </thead>
@@ -107,8 +156,7 @@ const CustomerAccountManagement = () => {
                       <td className="border border-gray-300 px-4 py-2">{member.firstName}</td>
                       <td className="border border-gray-300 px-4 py-2">{member.lastName}</td>
                       <td className="border border-gray-300 px-4 py-2">{member.email}</td>
-                      <td className="border border-gray-300 px-4 py-2">{member.phone}</td>
-                      <td className="border border-gray-300 px-4 py-2">{member.address}</td>
+                      <td className="border border-gray-300 px-4 py-2">{member.status}</td>
                       <td className="border border-gray-300 px-4 py-2">{member.joinedDate}</td>
                     </tr>
                   ))}
@@ -116,126 +164,137 @@ const CustomerAccountManagement = () => {
               </table>
             </div>
           </div>
-
-          {/* Modals */}
-
-          {/* Create Account Modal */}
-          {isCreateModalOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white w-full max-w-md rounded-lg p-6 shadow-lg">
-                <h2 className="text-xl font-bold mb-4">Create Account</h2>
-                <form onSubmit={handleCreateAccount} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium">Username</label>
-                    <input
-                      type="text"
-                      name="username"
-                      required
-                      className="w-full border rounded-lg p-2"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium">First Name</label>
-                    <input
-                      type="text"
-                      name="firstName"
-                      required
-                      className="w-full border rounded-lg p-2"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium">Last Name</label>
-                    <input
-                      type="text"
-                      name="lastName"
-                      required
-                      className="w-full border rounded-lg p-2"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium">Email</label>
-                    <input
-                      type="email"
-                      name="email"
-                      required
-                      className="w-full border rounded-lg p-2"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium">Contact</label>
-                    <input
-                      type="text"
-                      name="phone"
-                      required
-                      className="w-full border rounded-lg p-2"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium">Address</label>
-                    <input
-                      type="text"
-                      name="address"
-                      required
-                      className="w-full border rounded-lg p-2"
-                    />
-                  </div>
-                  <div className="flex justify-end space-x-4 mt-4">
-                    <button
-                      type="button"
-                      className="bg-gray-500 text-white px-4 py-2 rounded-lg"
-                      onClick={() => setIsCreateModalOpen(false)}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="bg-green-700 text-white px-4 py-2 rounded-lg"
-                    >
-                      Create
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {/* Delete Account Modal */}
-          {isDeleteModalOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white w-full max-w-sm rounded-lg p-6 shadow-lg">
-                <h2 className="text-xl font-bold mb-4">Delete Account</h2>
-                <form onSubmit={handleDeleteAccount} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium">Account ID</label>
-                    <input
-                      type="number"
-                      value={deleteId}
-                      onChange={(e) => setDeleteId(e.target.value)}
-                      required
-                      className="w-full border rounded-lg p-2"
-                    />
-                  </div>
-                  <div className="flex justify-end space-x-4 mt-4">
-                    <button
-                      type="button"
-                      className="bg-gray-500 text-white px-4 py-2 rounded-lg"
-                      onClick={() => setIsDeleteModalOpen(false)}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="bg-red-700 text-white px-4 py-2 rounded-lg"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Create Account Modal */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h3 className="text-xl font-bold">Create New Account</h3>
+            <form onSubmit={handleCreateAccount} className="mt-4">
+              <div>
+                <label>Username</label>
+                <input
+                  type="text"
+                  name="username"
+                  value={newMember.username}
+                  onChange={(e) => setNewMember({ ...newMember, username: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded"
+                  required
+                />
+              </div>
+              <div className="mt-4">
+                <label>First Name</label>
+                <input
+                  type="text"
+                  name="firstName"
+                  value={newMember.firstName}
+                  onChange={(e) => setNewMember({ ...newMember, firstName: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded"
+                  required
+                />
+              </div>
+              <div className="mt-4">
+                <label>Last Name</label>
+                <input
+                  type="text"
+                  name="lastName"
+                  value={newMember.lastName}
+                  onChange={(e) => setNewMember({ ...newMember, lastName: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded"
+                  required
+                />
+              </div>
+              <div className="mt-4">
+                <label>Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={newMember.email}
+                  onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded"
+                  required
+                />
+              </div>
+              <div className="mt-4">
+                <label>Status</label>
+                <select
+                  name="status"
+                  value={newMember.status}
+                  onChange={(e) => setNewMember({ ...newMember, status: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded"
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+              <div className="mt-4">
+                <label>Password</label>
+                <input
+                  type="password"
+                  name="password"
+                  value={newMember.password}
+                  onChange={(e) => setNewMember({ ...newMember, password: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded"
+                  required
+                />
+              </div>
+              <div className="mt-4 flex justify-between">
+                <button
+                  type="submit"
+                  className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded"
+                >
+                  Create Account
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
+                >
+                  Close
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h3 className="text-xl font-bold">Delete Account</h3>
+            <form onSubmit={handleDeleteAccount} className="mt-4">
+              <div>
+                <label>Enter Account ID to Delete</label>
+                <input
+                  type="number"
+                  value={deleteId}
+                  onChange={(e) => setDeleteId(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded"
+                  required
+                />
+              </div>
+              <div className="mt-4 flex justify-between">
+                <button
+                  type="submit"
+                  className="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded"
+                >
+                  Delete Account
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
+                >
+                  Close
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 };

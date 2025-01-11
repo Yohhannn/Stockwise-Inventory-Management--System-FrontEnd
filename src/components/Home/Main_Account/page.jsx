@@ -6,15 +6,26 @@ import MainFooter from "../../Layout/HF_Layout_Main/MainFooter";
 const AccountPage = () => {
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [userInfo] = useState({
-    accountId: "SW-2024-00123",
-    username: "johnpaul123",
-    firstName: "John Paul",
-    lastName: "Mahilom",
-    email: "johnpaul@example.com",
-    phone: "+63 912 345 6789",
-    address: "Cebu City, Philippines",
-    joinedDate: "January 15, 2024",
+    accountId: "SW-2024-001244",
+    username: "Joe",
+    firstName: "Joehanes",
+    lastName: "Lauglaug",
+    email: "joehaneslauglaug@gmail.com",
+    phone: "+63 922 523 5231",
+    address: "Lapu-Lapu City, Philippines",
+    joinedDate: "January 5, 2024",
+
+    // accountId: "SW-2024-001243",
+    // username: "johnpaul123",
+    // firstName: "John Paul",
+    // lastName: "Mahilom",
+    // email: "johnpaul@example.com",
+    // phone: "+63 912 345 6789",
+    // address: "Cebu City, Philippines",
+    // joinedDate: "January 9, 2024",
   });
+
+
 
   const navigate = useNavigate();
   const [purchaseHistory] = useState([]);
