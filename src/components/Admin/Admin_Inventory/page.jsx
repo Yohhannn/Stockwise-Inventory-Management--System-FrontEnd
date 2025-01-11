@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import AdminHeader from "../../Layout/HF_Layout_Admin/AdminHeader";
+import UploadImageFunction from "./upload";
+import axios from "axios";
 
 const AdminInventoryPage = () => {
   const [products, setProducts] = useState([]);
@@ -10,9 +12,25 @@ const AdminInventoryPage = () => {
     price: "",
     quantity: "",
     description: "",
+    image: "",
     category: "DAIRY",
   });
   const [removeProductId, setRemoveProductId] = useState("");
+
+  // Fetch products from the database when the component loads
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await axios.get("http://localhost:8080/api/products");
+        setProducts(response.data); // Populate the products state with fetched data
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        alert("Failed to fetch products.");
+      }
+    };
+
+    fetchProducts();
+  }, []); // Empty dependency array to run only once when the component mounts
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -22,52 +40,79 @@ const AdminInventoryPage = () => {
     }));
   };
 
-  const handleAddProduct = (e) => {
+  const handleAddProduct = async (e) => {
     e.preventDefault();
-    if (
-      !newProduct.name ||
-      !newProduct.price ||
-      !newProduct.quantity ||
-      !newProduct.category
-    ) {
+    if (!newProduct.name || !newProduct.price || !newProduct.quantity || !newProduct.category) {
       alert("Please fill in all required fields.");
       return;
     }
-    setProducts((prev) => [...prev, { ...newProduct, id: Date.now() }]);
-    setNewProduct({
-      name: "",
-      price: "",
-      quantity: "",
-      description: "",
-      category: "DAIRY",
-    });
-    setIsAddProductModalOpen(false);
-    alert("Product added successfully.");
+  
+    try {
+      const response = await axios.post("http://localhost:8080/api/products", {
+        name: newProduct.name,
+        description: newProduct.description,
+        price: parseFloat(newProduct.price),
+        availableQuantity: parseInt(newProduct.quantity, 10),
+        category: newProduct.category,
+        image: newProduct.image,
+      });
+  
+      setProducts((prev) => [...prev, response.data]);
+      setNewProduct({
+        name: "",
+        price: "",
+        quantity: "",
+        description: "",
+        image: "",
+        category: "DAIRY",
+      });
+      setIsAddProductModalOpen(false);
+      alert("Product added successfully.");
+    } catch (error) {
+      console.error("Error adding product:", error);
+      alert("Failed to add product.");
+    }
   };
 
-  const handleRemoveProduct = (e) => {
+  const handleRemoveProduct = async (e) => {
     e.preventDefault();
-    const productIndex = products.findIndex(
-      (product) => product.id === Number(removeProductId)
-    );
-    if (productIndex === -1) {
-      alert("Product not found.");
-    } else {
-      const updatedProducts = products.filter(
-        (product) => product.id !== Number(removeProductId)
-      );
-      setProducts(updatedProducts);
-      alert("Product removed successfully.");
+
+    // Check if ID is valid
+    if (!removeProductId) {
+      alert("Please enter a valid product ID.");
+      return;
     }
-    setRemoveProductId("");
-    setIsRemoveProductModalOpen(false);
+
+    try {
+      // Send DELETE request to backend
+      const response = await axios.delete(`http://localhost:8080/api/products/${removeProductId}`);
+      
+      // If successful, remove the product from the local state
+      if (response.status === 204) { // 204 is returned for successful deletion (no content)
+        setProducts((prev) => prev.filter((product) => product.id !== Number(removeProductId)));
+        setRemoveProductId(""); // Clear the ID field
+        setIsRemoveProductModalOpen(false); // Close the modal
+        alert("Product removed successfully.");
+      } else {
+        alert("Failed to remove product.");
+      }
+    } catch (error) {
+      console.error("Error removing product:", error);
+      alert("Failed to remove product.");
+    }
+  };
+
+  const handleImageUpload = (url) => {
+    setNewProduct((prev) => ({
+      ...prev,
+      image: url,
+    }));
   };
 
   return (
     <>
-      <AdminHeader></AdminHeader>
+      <AdminHeader />
       <div className="bg-gray-100 min-h-screen">
-        {/* Hero Section */}
         <div
           className="bg-green-700 text-white py-24 text-center bg-cover bg-center"
           style={{ backgroundImage: "url('landing_assets/info_bg1.svg')" }}
@@ -78,7 +123,6 @@ const AdminInventoryPage = () => {
           </div>
         </div>
 
-        {/* Centered Buttons */}
         <div className="container mx-auto px-6 py-6 flex justify-center space-x-4">
           <button
             className="px-6 py-2 bg-green-700 text-white font-semibold rounded-lg hover:bg-green-800"
@@ -94,7 +138,6 @@ const AdminInventoryPage = () => {
           </button>
         </div>
 
-        {/* Inventory Table */}
         <div className="container mx-auto px-6 py-6">
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white shadow-lg rounded-lg">
@@ -106,6 +149,7 @@ const AdminInventoryPage = () => {
                   <th className="py-2 px-4">Quantity</th>
                   <th className="py-2 px-4">Category</th>
                   <th className="py-2 px-4">Description</th>
+                  <th className="py-2 px-4">Image</th>
                 </tr>
               </thead>
               <tbody>
@@ -113,22 +157,32 @@ const AdminInventoryPage = () => {
                   products.map((product, index) => (
                     <tr
                       key={product.id}
-                      className={`${
-                        index % 2 === 0 ? "bg-gray-100" : "bg-white"
-                      }`}
+                      className={`${index % 2 === 0 ? "bg-gray-100" : "bg-white"
+                        }`}
                     >
                       <td className="py-2 px-4 text-center">{index + 1}</td>
-                      <td className="py-2 px-4">{product.name}</td>
-                      <td className="py-2 px-4">₱{product.price}</td>
-                      <td className="py-2 px-4">{product.quantity}</td>
-                      <td className="py-2 px-4">{product.category}</td>
-                      <td className="py-2 px-4">{product.description}</td>
+                      <td className="py-2 px-4 text-center">{product.name}</td>
+                      <td className="py-2 px-4 text-center">₱{product.price}</td>
+                      <td className="py-2 px-4 text-center">{product.quantity}</td>
+                      <td className="py-2 px-4 text-center">{product.category}</td>
+                      <td className="py-2 px-4 text-center">{product.description}</td>
+                      <td>
+                        {product.image && (
+                          <a href={product.image} target="_blank" rel="noreferrer">
+                            <img
+                              src={product.image}
+                              alt={product.name}
+                              className="w-16 h-16 object-cover text-center"
+                            />
+                          </a>
+                        )}
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
                     <td
-                      colSpan="6"
+                      colSpan="7"
                       className="py-4 text-center text-gray-500 italic"
                     >
                       No products in inventory.
@@ -204,17 +258,23 @@ const AdminInventoryPage = () => {
                     className="w-full border rounded-lg p-2"
                   />
                 </div>
-                <div className="flex justify-end space-x-4">
+
+                {/* UPLOAD IMAGE TO CLOUDINARY */}
+                <div>
+                  <UploadImageFunction onImageUpload={handleImageUpload} />
+                </div>
+
+                <div className="flex justify-end space-x-2">
                   <button
                     type="button"
-                    className="bg-gray-500 text-white px-4 py-2 rounded-lg"
                     onClick={() => setIsAddProductModalOpen(false)}
+                    className="px-4 py-2 rounded bg-gray-300 text-gray-800 font-medium hover:bg-gray-400"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="bg-green-700 text-white px-4 py-2 rounded-lg"
+                    className="px-4 py-2 rounded bg-green-500 text-white font-medium hover:bg-green-600"
                   >
                     Add Product
                   </button>
@@ -230,25 +290,27 @@ const AdminInventoryPage = () => {
             <div className="bg-white w-full max-w-md rounded-lg p-6 shadow-lg">
               <h2 className="text-xl font-bold mb-4">Remove Product</h2>
               <form onSubmit={handleRemoveProduct} className="space-y-4">
-                <input
-                  type="number"
-                  placeholder="Enter Product ID"
-                  value={removeProductId}
-                  onChange={(e) => setRemoveProductId(e.target.value)}
-                  className="w-full border rounded-lg p-2"
-                  required
-                />
-                <div className="flex justify-end space-x-4">
+                <div>
+                  <label className="block text-sm font-medium">Product ID</label>
+                  <input
+                    type="number"
+                    value={removeProductId}
+                    onChange={(e) => setRemoveProductId(e.target.value)}
+                    className="w-full border rounded-lg p-2"
+                    required
+                  />
+                </div>
+                <div className="flex justify-end space-x-2">
                   <button
                     type="button"
-                    className="bg-gray-500 text-white px-4 py-2 rounded-lg"
                     onClick={() => setIsRemoveProductModalOpen(false)}
+                    className="px-4 py-2 rounded bg-gray-300 text-gray-800 font-medium hover:bg-gray-400"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="bg-red-600 text-white px-4 py-2 rounded-lg"
+                    className="px-4 py-2 rounded bg-red-500 text-white font-medium hover:bg-red-600"
                   >
                     Remove
                   </button>

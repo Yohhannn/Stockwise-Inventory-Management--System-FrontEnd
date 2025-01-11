@@ -1,11 +1,44 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import AdminHeader from "../../Layout/HF_Layout_Admin/AdminHeader";
+import axios from "axios";
 
 const AdminOverviewPage = () => {
-  const revenue = 50000; // Example total revenue
-  const bestSellingProduct = "Milk"; // Example best-selling product
-  const totalSales = 250; // Example total sales
-  const totalUsers = 120; // Example total registered users
+  const [revenue, setRevenue] = useState(null);
+  const [bestSellingProduct, setBestSellingProduct] = useState(null);
+  const [totalSales, setTotalSales] = useState(null);
+  const [totalUsers, setTotalUsers] = useState(null);
+  const [newUsersCount, setNewUsersCount] = useState(null);
+  const [activeUsersCount, setActiveUsersCount] = useState(null);
+
+  // Fetch the statistics from the API when the component mounts
+  useEffect(() => {
+    const fetchStatistics = async () => {
+      try {
+        const revenueResponse = await axios.get("http://localhost:8080/api/statistics/total-revenue");
+        setRevenue(revenueResponse.data);
+
+        const bestSellingProductResponse = await axios.get("http://localhost:8080/api/statistics/best-selling-product");
+        setBestSellingProduct(bestSellingProductResponse.data ? bestSellingProductResponse.data.name : "N/A");
+
+        const totalSalesResponse = await axios.get("http://localhost:8080/api/statistics/total-sales");
+        setTotalSales(totalSalesResponse.data);
+
+        const totalUsersResponse = await axios.get("http://localhost:8080/api/statistics/total-users");
+        setTotalUsers(totalUsersResponse.data);
+
+        const newUsersCountResponse = await axios.get("http://localhost:8080/api/statistics/new-users-count");
+        setNewUsersCount(newUsersCountResponse.data);
+
+        const activeUsersCountResponse = await axios.get("http://localhost:8080/api/statistics/active-users");
+        setActiveUsersCount(activeUsersCountResponse.data);
+      } catch (error) {
+        console.error("Error fetching statistics:", error);
+        alert("Failed to fetch statistics.");
+      }
+    };
+
+    fetchStatistics();
+  }, []); // Empty array to run once when the component mounts
 
   const StatCard = ({ title, value, color, children }) => (
     <div className="bg-white shadow-lg rounded-lg p-6 text-center relative">
@@ -32,10 +65,10 @@ const AdminOverviewPage = () => {
 
         {/* Overview Cards */}
         <div className="container mx-auto px-6 py-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard title="Total Revenue" value={`₱${revenue.toLocaleString()}`} color="text-green-700" />
-          <StatCard title="Best-Selling Product" value={bestSellingProduct} color="text-blue-700" />
-          <StatCard title="Total Sales" value={totalSales} color="text-purple-700" />
-          <StatCard title="Total Users" value={totalUsers} color="text-orange-700">
+          <StatCard title="Total Revenue" value={`₱${revenue ? revenue.toLocaleString() : "Loading..."}`} color="text-green-700" />
+          <StatCard title="Best-Selling Product" value={bestSellingProduct || "Loading..."} color="text-blue-700" />
+          <StatCard title="Total Sales" value={totalSales || "Loading..."} color="text-purple-700" />
+          <StatCard title="Total Users" value={totalUsers || "Loading..."} color="text-orange-700">
             <button
               className="absolute top-4 right-4 p-2 bg-orange-600 text-white rounded-full hover:bg-orange-700"
               onClick={() => (window.location.href = "/admin_memberlist")}
@@ -47,44 +80,19 @@ const AdminOverviewPage = () => {
           </StatCard>
         </div>
 
-        {/* Statistics Section */}
+        {/* Additional Stats */}
         <div className="container mx-auto px-6 py-6">
           <h2 className="text-2xl font-bold mb-4">Detailed Statistics</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Revenue Breakdown */}
-            <div className="bg-white shadow-lg rounded-lg p-6">
-              <h3 className="text-lg font-semibold">Revenue Breakdown</h3>
-              <p className="text-sm text-gray-600 mb-4">Analyze revenue trends and sources.</p>
-              <div className="bg-gray-200 rounded-lg h-32 flex items-center justify-center">
-                <span className="text-gray-500">[Revenue Chart Placeholder]</span>
-              </div>
-            </div>
-
-            {/* Top Products */}
-            <div className="bg-white shadow-lg rounded-lg p-6">
-              <h3 className="text-lg font-semibold">Top Products</h3>
-              <p className="text-sm text-gray-600 mb-4">Discover the most purchased products.</p>
-              <ul className="list-disc pl-5 text-gray-700">
-                <li>Product A - 120 units</li>
-                <li>Product B - 98 units</li>
-                <li>Product C - 85 units</li>
-                <li>Product D - 60 units</li>
-                <li>Product E - 45 units</li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Additional Stats */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
             <div className="bg-white shadow-lg rounded-lg p-6">
               <h3 className="text-lg font-semibold">New Users</h3>
               <p className="text-sm text-gray-600 mb-4">Number of users registered this month.</p>
-              <div className="text-2xl font-bold text-teal-700">30</div>
+              <div className="text-2xl font-bold text-teal-700">{newUsersCount !== null ? newUsersCount : "Loading..."}</div>
             </div>
             <div className="bg-white shadow-lg rounded-lg p-6">
               <h3 className="text-lg font-semibold">Active Users</h3>
               <p className="text-sm text-gray-600 mb-4">Users active in the last 7 days.</p>
-              <div className="text-2xl font-bold text-indigo-700">85</div>
+              <div className="text-2xl font-bold text-indigo-700">{activeUsersCount !== null ? activeUsersCount : "Loading..."}</div>
             </div>
           </div>
         </div>
