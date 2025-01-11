@@ -11,10 +11,10 @@ function UploadImageFunction({ onImageUpload }) {
     setLoading(true);
     const data = new FormData()
     data.append("file", file)
-    data.append("upload_preset", "initial_preset_upload_jp")
-    data.append("cloud_name", "dc19nhati")
+    data.append("upload_preset", "")
+    data.append("cloud_name", "key")
 
-    const res = await fetch("https://api.cloudinary.com/v1_1/dc19nhati/image/upload", {
+    const res = await fetch("YOUR CLOUDINARY API", { //https://api.cloudinary.com/v1_1/???/image/upload
       method: "POST",
       body: data
     });
